@@ -48,7 +48,7 @@ local AutoPrestige = AutoStuff:CreateToggle("Auto Prestige", function(state)
     if state then
         PrestigeState = true
         while PrestigeState == true do
-            wait(1)
+            wait(3)
             local modscript = require(game:GetService("ReplicatedStorage").Resets)
             modscript.Prestige()
         end
@@ -63,7 +63,7 @@ local AutoCrystallize = AutoStuff:CreateToggle("Auto Crystallize", function(stat
     if state then
         CrystallizeState = true
         while CrystallizeState == true do
-            wait(1)
+            wait(3)
             local modscript = require(game:GetService("ReplicatedStorage").Resets)
             modscript.Crystallize()
         end
@@ -73,23 +73,26 @@ local AutoCrystallize = AutoStuff:CreateToggle("Auto Crystallize", function(stat
 end)
 
 
-local UpgradeLoop;
-local MaxUpgrades = misc:CreateToggle("Max Upgrades (loop)", function(state)
+local checkUpgrades = false
+local MaxUpgrades = misc:CreateToggle("Max Upgrades", function(state)
     if state then
-        UpgradeLoop = game:GetService("RunService").RenderStepped:Connect(function()
+        checkUpgrades = true
+        repeat wait()
             local Player = game.Players.LocalPlayer
             for i, v in pairs(Player.PlayerGui:GetDescendants()) do
                 if v.Name == "BasicUpgrade" then
-                    v.Variables.CostScaling.Value = 0
-                    v.Variables.BaseCost.Value = 0.1
-                    v.Variables.Level.Value = v.Variables.LevelCap.Value
+                    v.Variables.CostScaling.Value = 1
+                    v.Variables.BaseCost.Value = 0
+                    firesignal(v.MouseButton1Click)
+                    local obj = v.Parent.Parent.Info:FindFirstChild("Buy Max")
+                    if obj then
+                        firesignal(v.Parent.Parent.Info["Buy Max"].MouseButton1Click)
+                    end
                 end
             end
-        end)
+        until checkUpgrades == false
     elseif not state then
-        if UpgradeLoop then
-            UpgradeLoop:Disconnect()
-        end
+        checkUpgrades = false
     end
 end)
 
