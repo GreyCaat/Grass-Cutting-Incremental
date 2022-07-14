@@ -2,6 +2,7 @@ getgenv().ToggleAntiAfk = false
 
 -----------------------------------------------------------------------------------------------------------------------
 --AntiAfk
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local VU = game:GetService("VirtualUser")
 game:GetService("Players").LocalPlayer.Idled:connect(function()
     if ToggleAntiAfk == true then
@@ -21,21 +22,26 @@ local main = library:CreateMain("Grass Cutting Incremental", "also me hello")
 
 local AutoStuff = main:CreateTab("Auto-Stuff")
 
+local UpgradeStuff = main:CreateTab("Upgrade-Stuff")
+
 local misc = main:CreateTab("Misc.")
 
 
 local GrassLoop;
 local FarmGrass = AutoStuff:CreateToggle("Collect Grass", function(state)
     if state then
-        local Player = game.Players.LocalPlayer.Character
+        local mod = require(game:GetService("ReplicatedStorage").EarnGrass)
+
         GrassLoop = game:GetService("RunService").RenderStepped:Connect(function()
-            for i, v in pairs(game:GetService("Workspace").GrassObjects:GetChildren()) do
-                if v.Transparency ~= 1 then
-                    Player.HumanoidRootPart.CFrame = v.CFrame
+            task.wait()
+            task.wait()
+            for _, v in pairs(game:GetService("Workspace").GrassObjects:GetChildren()) do
+                if v.Identifier.Value ~= "magic" then
+                    mod.collect(v, false)
                 end
             end
         end)
-    elseif not state then
+    else
         if GrassLoop then
             GrassLoop:Disconnect()
         end
@@ -52,7 +58,7 @@ local AutoPrestige = AutoStuff:CreateToggle("Auto Prestige", function(state)
             local modscript = require(game:GetService("ReplicatedStorage").Resets)
             modscript.Prestige()
         end
-    elseif not state then
+    else
         PrestigeState = false
     end
 end)
@@ -67,32 +73,30 @@ local AutoCrystallize = AutoStuff:CreateToggle("Auto Crystallize", function(stat
             local modscript = require(game:GetService("ReplicatedStorage").Resets)
             modscript.Crystallize()
         end
-    elseif not state then
+    else
         CrystallizeState = false
     end
 end)
 
 
-local checkUpgrades = false
-local MaxUpgrades = misc:CreateToggle("Max Upgrades", function(state)
-    if state then
-        checkUpgrades = true
-        repeat wait()
-            local Player = game.Players.LocalPlayer
-            for i, v in pairs(Player.PlayerGui:GetDescendants()) do
-                if v.Name == "BasicUpgrade" then
-                    v.Variables.CostScaling.Value = 1
-                    v.Variables.BaseCost.Value = 0
-                    firesignal(v.MouseButton1Click)
-                    local obj = v.Parent.Parent.Info:FindFirstChild("Buy Max")
-                    if obj then
-                        firesignal(v.Parent.Parent.Info["Buy Max"].MouseButton1Click)
-                    end
-                end
-            end
-        until checkUpgrades == false
-    elseif not state then
-        checkUpgrades = false
+local FreeUpgrades = UpgradeStuff:CreateButton("Free Upgrades", function()
+    local Player = game.Players.LocalPlayer
+    for _, v in pairs(Player.PlayerGui:GetDescendants()) do
+        if v.Name == "BasicUpgrade" then
+            v.Variables.CostScaling.Value = 1
+            v.Variables.BaseCost.Value = 0
+            v.Variables.Currency.Value = "grass"
+        end
+    end
+end)
+
+
+local OpUpgrades = UpgradeStuff:CreateButton("Huge Bonus Per Level", function()
+    local Player = game.Players.LocalPlayer
+    for _, v in pairs(Player.PlayerGui:GetDescendants()) do
+        if v.Name == "BasicUpgrade" then
+            v.Variables.BonusPerLevel.Value = math.huge()
+        end
     end
 end)
 
@@ -100,7 +104,7 @@ end)
 local AntiAfk = misc:CreateToggle("Anti Afk", function(state)
     if state then
         ToggleAntiAfk = true
-    elseif not state then
+    else
         ToggleAntiAfk = false
     end
 end)
