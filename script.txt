@@ -1,3 +1,4 @@
+local Data = require(game:GetService("ReplicatedStorage").Data)
 getgenv().ToggleAntiAfk = false
 
 -----------------------------------------------------------------------------------------------------------------------
@@ -33,6 +34,7 @@ local FarmGrass = AutoStuff:CreateToggle("Collect Grass", function(state)
         local mod = require(game:GetService("ReplicatedStorage").EarnGrass)
 
         GrassLoop = game:GetService("RunService").Heartbeat:Connect(function()
+            task.wait()
             for _, v in pairs(game:GetService("Workspace").GrassObjects:GetChildren()) do
                 if v.Identifier.Value ~= "magic" then
                     mod.collect(v, false)
@@ -76,86 +78,86 @@ local AutoCrystallize = AutoStuff:CreateToggle("Auto Crystallize", function(stat
     end
 end)
 
-----------------------------------------------------------------------
-
---This will ban, will still keep it here tho if anyone wants to use it
-
---[[
 local textClick = UpgradeStuff:CreateLabel("Clicking on a Upgrade will max it out")
 
 local ClickUpgradeState = false
-local connections = {}
 local ClickMaxUpgrade = UpgradeStuff:CreateToggle("Click Max Upgrade", function(state)
     if state then
         ClickUpgradeState = true
         local Player = game.Players.LocalPlayer
         for _, v in pairs(Player.PlayerGui:GetDescendants()) do
             if v.Name == "BasicUpgrade" then
-                for _, v in pairs(getconnections(v.MouseButton1Click)) do
-                    table.insert(connections, v)
-
-                    v:Disable()
-                end
-
                 local DownConnection;
 
                 local function disc()
                     DownConnection:Disconnect()
                 end
 
+                
+                local oldCS 
+                local oldBC
+                local oldCC
+
                 DownConnection = v.MouseButton1Down:Connect(function()
+                    if v.Variables.CostScaling.Value ~= 0 then
+                        oldCS = v.Variables.CostScaling.Value
+                        oldBC = v.Variables.BaseCost.Value
+                        oldCC = v.Variables.Currency.Value
+
+                        v.Variables.CostScaling.Value = 0
+                        v.Variables.BaseCost.Value = 0
+                        v.Variables.Currency.Value = "grass"
+                    end
+                    
+                    task.wait(0.1)
+
                     if ClickUpgradeState then
-                        v.Variables.Level.Value = tonumber(v.Variables.LevelCap.Value)
+                        Data.BuyMaxUpgrade()
                     else
                         disc()
                     end
-                end)
 
-                spawn(function()
-                    repeat task.wait(0.25) until ClickUpgradeState == false
+                    local obj = v
+                    local done = false
+                    repeat
+                        obj = obj.Parent
+                        local obj2 = obj:FindFirstChild("Info")
 
-                    DownConnection:Disconnect()
+                        if obj2 then
+                            done = true
+                        end
+                    until done
+
+                    for _, v in pairs(getconnections(obj.Info.CloseButton.MouseButton1Click)) do
+                        v:Fire()
+                    end
+
+                    if oldCS then
+                        v.Variables.CostScaling.Value = oldCS
+                        v.Variables.BaseCost.Value = oldBC
+                        v.Variables.Currency.Value = oldCC
+                    end
                 end)
             end
         end
     else
         ClickUpgradeState = false
-
-        for _, v in pairs(connections) do
-            v:Enable()
-        end
-
-        table.clear(connections)
     end
 end)
 
 local clickmaxupgradeline = UpgradeStuff:CreateLine()
---]]
 
-----------------------------------------------------------------------
-
-local OpUpgrades = UpgradeStuff:CreateButton("Make Upgrades OP", function()
+local FreeUpgrades = UpgradeStuff:CreateButton("Cheap Upgrades", function()
     local Player = game.Players.LocalPlayer
     for _, v in pairs(Player.PlayerGui:GetDescendants()) do
         if v.Name == "BasicUpgrade" then
-            if not string.find(v.Variables.Identifier.Value, "Spd") and not string.find(v.Variables.Identifier.Value, "range") and not string.find(v.Variables.Identifier.Value, "colider") and not string.find(v.Variables.Identifier.Value, "spawn") then
-                v.Variables.BonusPerLevel.Value = 9e30
-            end
-        end
-    end
-end)
-
-local FreeUpgrades = UpgradeStuff:CreateButton("Free Upgrades", function()
-    local Player = game.Players.LocalPlayer
-    for _, v in pairs(Player.PlayerGui:GetDescendants()) do
-        if v.Name == "BasicUpgrade" then
-            v.Variables.CostScaling.Value = 1
-            v.Variables.BaseCost.Value = 0
-
             if v.Variables.Currency.Value == "antigrass" or v.Variables.Currency.Value == "unnaturalgrass" then
             else
                 v.Variables.Currency.Value = "grass"
             end
+
+            v.Variables.CostScaling.Value = 0
+            v.Variables.BaseCost.Value = 0
         end
     end
 end)
